@@ -14,7 +14,6 @@ graphqlClient.inject_token(
     os.environ['HASURA_GRAPHQL_ADMIN_SECRET'], 'x-hasura-admin-secret')
 
 
-
 notifications_insert_mutation = '''
 mutation insert_notifications($objects: [notifications_insert_input!]! ) {
     insert_notifications(
@@ -137,10 +136,6 @@ def add_owner(user_id, id, type):
 def handle_notifications(trigger_payload, table, query, problem_id, user_id=None, notification_type=None):
     users_to_notify = []
     notifications = []
-    # solution_id = None
-
-    # if table == "solutions":
-    #     solution_id = trigger_payload["event"]["data"]["new"]["id"]
 
     query_data = json.loads(graphqlClient.execute(query))[
         "data"][table][0]
@@ -155,8 +150,9 @@ def handle_notifications(trigger_payload, table, query, problem_id, user_id=None
         notifification_entry = {"user_id": user, "problem_id": problem_id}
         if user_id and notification_type:
             notifification_entry[notification_type] = user_id
-        # if solution_id:
-        #     notifification_entry["solution_id"] = solution_id
+        else:
+            notifification_entry["is_update"] = True
+
         notifications.append(notifification_entry)
     print(notifications, "=====notifications")
     try:
@@ -184,8 +180,7 @@ def handle_solution_notifications(trigger_payload, table, query, solution_id, us
             notifification_entry[notification_type] = user_id
         else:
             notifification_entry["is_update"] = True
-        # if solution_id:
-        #     notifification_entry["solution_id"] = solution_id
+
         notifications.append(notifification_entry)
     print(notifications, "=====notifications")
     try:
@@ -193,7 +188,6 @@ def handle_solution_notifications(trigger_payload, table, query, solution_id, us
             'objects': list(notifications)})
     except:
         pass
-    # return "working"
 
 
 def handle_enrichments_notification(trigger_payload, query, enrichment_id, user_id):
@@ -221,13 +215,6 @@ def handle_enrichments_notification(trigger_payload, query, enrichment_id, user_
         pass
 
 
-@app.route("/")
-def entry():
-
-    print("testing")
-    return "working"
-
-
 @app.route("/problems/insert", methods=['POST'])
 def handle_problem_insert():
 
@@ -239,7 +226,7 @@ def handle_problem_insert():
 
     user_id = trigger_payload["event"]["data"]["new"]["user_id"]
 
-    add_owner(user_id,problem_id,"problem")
+    add_owner(user_id, problem_id, "problem")
 
     problems_insert_query = '''
             {
@@ -271,24 +258,25 @@ def handle_problem_insert():
         graphqlClient.execute(notifications_insert_mutation, {
             'objects': list(problem_insert_notifications)})
     except:
+
         pass
 
-    return "working"
+    return {"message": "Notification sent"}, 201
 
 
 @app.route("/problems/update", methods=['POST'])
 def handle_problem_update():
     trigger_payload = request.json
     problem_id = trigger_payload["event"]["data"]["new"]["id"]
-    user_id=trigger_payload["event"]["data"]["new"]["user_id"]
+    user_id = trigger_payload["event"]["data"]["new"]["user_id"]
 
     if (trigger_payload["event"]["op"] == "UPDATE" and not trigger_payload["event"]["data"]["new"]["is_draft"]):
 
         query = get_problem_query(problem_id)
         handle_notifications(trigger_payload, "problems",
-                             query, problem_id,user_id)
+                             query, problem_id, user_id)
 
-    return "working"
+    return {"message": "Notification sent"}, 201
 
 
 @app.route("/problems/collaboration", methods=['POST'])
@@ -301,7 +289,7 @@ def handle_problem_collaboration():
 
     handle_notifications(trigger_payload, "problems",
                          query, problem_id, user_id, "collaborator")
-    return "working"
+    return {"message": "Notification sent"}, 201
 
 
 @app.route("/problems/validation", methods=['POST'])
@@ -314,7 +302,7 @@ def handle_problem_validation():
 
     handle_notifications(trigger_payload, "problems",
                          query, problem_id, user_id, "validated_by")
-    return "working"
+    return {"message": "Notification sent"}, 201
 
 
 @app.route("/enrichments/insert", methods=['POST'])
@@ -325,7 +313,7 @@ def handle_enrichment_insert():
     query = get_enrichment_query(enrichment_id)
     handle_enrichments_notification(
         trigger_payload, query, enrichment_id, user_id)
-    return "working"
+    return {"message": "Notification sent"}, 201
 
 
 @app.route("/discussion_mentions", methods=['POST'])
@@ -355,7 +343,7 @@ def handle_discussion_mentions():
             'objects': list(notification)})
     except:
         pass
-    return "working"
+    return {"message": "Notification sent"}, 201
 
 
 @app.route("/solutions/insert", methods=['POST'])
@@ -366,8 +354,7 @@ def handle_solution_insert():
     solution_id = trigger_payload["event"]["data"]["new"]["id"]
     user_id = trigger_payload["event"]["data"]["new"]["user_id"]
 
-    add_owner(user_id,solution_id,"solution")
-
+    add_owner(user_id, solution_id, "solution")
 
     solution_insert_query = '''query{
     solutions(where:{id:{_eq:%s}}){
@@ -435,7 +422,7 @@ def handle_solution_insert():
             'objects': list(notifications)})
     except:
         pass
-    return "working"
+    return {"message": "Notification sent"}, 201
 
 
 @app.route("/solutions/update", methods=['POST'])
@@ -449,7 +436,7 @@ def handle_solutions_update():
         handle_solution_notifications(trigger_payload, "solutions",
                                       query, solution_id)
 
-    return "working"
+    return {"message": "Notification sent"}, 201
 
 
 @app.route("/solutions/collaboration", methods=['POST'])
@@ -462,7 +449,7 @@ def handle_solution_collaboration():
 
     handle_solution_notifications(trigger_payload, "solutions",
                                   query, solution_id, user_id, "collaborator")
-    return "working"
+    return {"message": "Notification sent"}, 201
 
 
 @app.route("/solutions/validation", methods=['POST'])
@@ -475,9 +462,9 @@ def handle_solution_validation():
 
     handle_solution_notifications(trigger_payload, "solutions",
                                   query, solution_id, user_id, "validated_by")
-    return "working"
+    return {"message": "Notification sent"}, 201
 
 
 if __name__ == "__main__":
-    # app.run(debug=True)
+
     serve(app, listen='*:{}'.format(str(PORT)))
