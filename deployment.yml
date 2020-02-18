@@ -1,36 +1,36 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: oip-notifications
+  name: oip-notifications-prod
 spec:
   ports:
   - port: 80
     targetPort: 8080
   selector:
-    app: oip-notifications
+    app: oip-notifications-prod
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: oip-notifications
+  name: oip-notifications-prod
 spec:
   selector:
     matchLabels:
-      app: oip-notifications
+      app: oip-notifications-prod
   replicas: 1
   template:
     metadata:
       labels:
-        app: oip-notifications
+        app: oip-notifications-prod
     spec:
       containers:
-      - name: oip-notifications
-        image: socialalphaoip/notifications-microservice:dev
+      - name: oip-notifications-prod
+        image: socialalphaoip/notifications-microservice:prod
         ports:
         - containerPort: 8080
         env:
           - name: HASURA_GRAPHQL_URL
-            value: https://sa-dev.dev.jaagalabs.com/v1/graphql
+            value: http://oip-hasura-prod/v1/graphql
           - name: HASURA_GRAPHQL_ADMIN_SECRET
             value: 1SocialAlpha
 ---

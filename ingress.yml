@@ -1,19 +1,19 @@
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
-  name: oip-notifications-ingress
+  name: oip-notifications-prod-ingress
   annotations:
     kubernetes.io/ingress.class: "nginx"
     cert-manager.io/cluster-issuer: "letsencrypt-staging"
 spec:
   tls:
   - hosts:
-    - oip-notifications.k8s.jaagalabs.com
-    secretName: oip-notifications-tls
+    - oip-notifications-prod.k8s.jaagalabs.com
+    secretName: oip-notifications-prod-tls
   rules:  
-  - host: oip-notifications.k8s.jaagalabs.com
+  - host: oip-notifications-prod.k8s.jaagalabs.com
     http:
       paths:
       - backend:
-          serviceName: oip-notifications
+          serviceName: oip-notifications-prod
           servicePort: 80
