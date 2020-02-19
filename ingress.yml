@@ -8,10 +8,10 @@ metadata:
 spec:
   tls:
   - hosts:
-    - oip-notifications-prod.k8s.jaagalabs.com
+    - oip-notifications-prod.oip.dev.code-alpha.org
     secretName: oip-notifications-prod-tls
   rules:  
-  - host: oip-notifications-prod.k8s.jaagalabs.com
+  - host: oip-notifications-prod.oip.dev.code-alpha.org
     http:
       paths:
       - backend:
